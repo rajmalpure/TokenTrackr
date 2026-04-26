@@ -1,0 +1,14 @@
+# Local Kubeconfigs
+kubeconfig
+*.kubeconfig
+
+# Helm Charts
+charts/
+requirements.lock
+
+# Temporary Manifests
+*.tmp.yaml
+*.tmp.json
+
+# Local overrides
+local-overrides.yaml

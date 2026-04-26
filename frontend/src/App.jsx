@@ -1,0 +1,112 @@
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { AuthProvider, useAuth } from './context/AuthContext';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import AdminPanel from './pages/AdminPanel';
+import TokenWallet from './pages/TokenWallet';
+
+// Protected route wrapper
+const ProtectedRoute = ({ children, requiredRole }) => {
+  const { user, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-slate-900 flex items-center justify-center">
+        <svg className="animate-spin w-10 h-10 text-purple-500" fill="none" viewBox="0 0 24 24">
+          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+        </svg>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (requiredRole && user.role !== requiredRole) {
+    // Redirect to their appropriate home
+    return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
+  }
+
+  return children;
+};
+
+const AppRoutes = () => {
+  const { user } = useAuth();
+
+  return (
+    <Routes>
+      {/* Redirect root to login */}
+      <Route path="/" element={<Navigate to="/login" replace />} />
+
+      {/* Public routes */}
+      <Route
+        path="/login"
+        element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <Login />}
+      />
+      <Route
+        path="/register"
+        element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <Register />}
+      />
+
+      {/* Protected: student dashboard */}
+      <Route
+        path="/dashboard"
+        element={
+          <ProtectedRoute requiredRole="student">
+            <Dashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected: admin panel */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute requiredRole="admin">
+            <AdminPanel />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* Protected: wallet (any role) */}
+      <Route
+        path="/wallet"
+        element={
+          <ProtectedRoute>
+            <TokenWallet />
+          </ProtectedRoute>
+        }
+      />
+
+      {/* 404 catch-all */}
+      <Route
+        path="*"
+        element={
+          <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
+            <h1 className="text-6xl font-black text-purple-400">404</h1>
+            <p className="text-slate-400 mt-2">Page not found</p>
+            <a href="/login" className="mt-6 px-6 py-2 bg-purple-600 rounded-xl text-white hover:bg-purple-700 transition">
+              Go Home
+            </a>
+          </div>
+        }
+      />
+    </Routes>
+  );
+};
+
+const App = () => {
+  return (
+    <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
+      <AuthProvider>
+        <AppRoutes />
+      </AuthProvider>
+    </Router>
+  );
+};
+
+export default App;
