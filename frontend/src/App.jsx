@@ -7,6 +7,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import AdminPanel from './pages/AdminPanel';
+import AdminTreasury from './pages/AdminTreasury';
 import TokenWallet from './pages/TokenWallet';
 
 // Protected route wrapper
@@ -29,7 +30,6 @@ const ProtectedRoute = ({ children, requiredRole }) => {
   }
 
   if (requiredRole && user.role !== requiredRole) {
-    // Redirect to their appropriate home
     return <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace />;
   }
 
@@ -41,10 +41,8 @@ const AppRoutes = () => {
 
   return (
     <Routes>
-      {/* Landing page */}
       <Route path="/" element={<LandingPage />} />
 
-      {/* Public routes */}
       <Route
         path="/login"
         element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <Login />}
@@ -54,7 +52,7 @@ const AppRoutes = () => {
         element={user ? <Navigate to={user.role === 'admin' ? '/admin' : '/dashboard'} replace /> : <Register />}
       />
 
-      {/* Protected: student dashboard */}
+      {/* Student: Dashboard & Vault */}
       <Route
         path="/dashboard"
         element={
@@ -63,8 +61,16 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/wallet"
+        element={
+          <ProtectedRoute requiredRole="student">
+            <TokenWallet />
+          </ProtectedRoute>
+        }
+      />
 
-      {/* Protected: admin panel */}
+      {/* Admin: Panel & Treasury */}
       <Route
         path="/admin"
         element={
@@ -73,13 +79,11 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
-
-      {/* Protected: wallet (any role) */}
       <Route
-        path="/wallet"
+        path="/treasury"
         element={
-          <ProtectedRoute>
-            <TokenWallet />
+          <ProtectedRoute requiredRole="admin">
+            <AdminTreasury />
           </ProtectedRoute>
         }
       />
@@ -91,9 +95,9 @@ const AppRoutes = () => {
           <div className="min-h-screen bg-slate-900 flex flex-col items-center justify-center text-white">
             <h1 className="text-6xl font-black text-purple-400">404</h1>
             <p className="text-slate-400 mt-2">Page not found</p>
-            <a href="/login" className="mt-6 px-6 py-2 bg-purple-600 rounded-xl text-white hover:bg-purple-700 transition">
+            <Link to="/" className="mt-6 px-6 py-2 bg-purple-600 rounded-xl text-white hover:bg-purple-700 transition">
               Go Home
-            </a>
+            </Link>
           </div>
         }
       />

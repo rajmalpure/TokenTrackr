@@ -2,17 +2,14 @@ const pool = require('../config/db');
 
 const getBalance = async (req, res) => {
   const userId = req.user.id;
-
   try {
     const result = await pool.query(
       `SELECT balance, updated_at FROM token_wallet WHERE user_id = $1`,
       [userId]
     );
-
     if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Wallet not found for this user' });
     }
-
     return res.status(200).json({
       user_id: userId,
       balance: result.rows[0].balance,
@@ -27,7 +24,6 @@ const getBalance = async (req, res) => {
 const redeemTokens = async (req, res) => {
   const userId = req.user.id;
   const { tokens_to_use, reward_type } = req.body;
-
   const allowedRewards = ['Certificate', 'Priority Seating', 'Exam Fee Waiver'];
 
   if (!tokens_to_use || !reward_type) {
@@ -48,8 +44,6 @@ const redeemTokens = async (req, res) => {
   const client = await pool.connect();
   try {
     await client.query('BEGIN');
-
-    // Fetch current balance with lock
     const walletResult = await client.query(
       `SELECT balance FROM token_wallet WHERE user_id = $1 FOR UPDATE`,
       [userId]
@@ -61,7 +55,6 @@ const redeemTokens = async (req, res) => {
     }
 
     const currentBalance = walletResult.rows[0].balance;
-
     if (currentBalance < tokensInt) {
       await client.query('ROLLBACK');
       return res.status(400).json({
@@ -69,15 +62,11 @@ const redeemTokens = async (req, res) => {
       });
     }
 
-    // Deduct tokens from wallet
     await client.query(
-      `UPDATE token_wallet
-       SET balance = balance - $1, updated_at = NOW()
-       WHERE user_id = $2`,
+      `UPDATE token_wallet SET balance = balance - $1, updated_at = NOW() WHERE user_id = $2`,
       [tokensInt, userId]
     );
 
-    // Insert redemption record
     const redemptionResult = await client.query(
       `INSERT INTO redemptions (user_id, tokens_used, reward_type)
        VALUES ($1, $2, $3)
@@ -86,7 +75,6 @@ const redeemTokens = async (req, res) => {
     );
 
     await client.query('COMMIT');
-
     return res.status(201).json({
       message: 'Tokens redeemed successfully',
       redemption: redemptionResult.rows[0],
@@ -103,7 +91,6 @@ const redeemTokens = async (req, res) => {
 
 const getRedemptionHistory = async (req, res) => {
   const userId = req.user.id;
-
   try {
     const result = await pool.query(
       `SELECT id, user_id, tokens_used, reward_type, redeemed_at
@@ -112,7 +99,6 @@ const getRedemptionHistory = async (req, res) => {
        ORDER BY redeemed_at DESC`,
       [userId]
     );
-
     return res.status(200).json({
       user_id: userId,
       total_redemptions: result.rows.length,
@@ -124,4 +110,56 @@ const getRedemptionHistory = async (req, res) => {
   }
 };
 
-module.exports = { getBalance, redeemTokens, getRedemptionHistory };
+// 🏛️ ADMIN: Get Treasury Stats (Global system oversight)
+const getTreasuryStats = async (req, res) => {
+  try {
+    // Total tokens ever awarded (sum of all attendance tokens)
+    const tokensAwarded = await pool.query(`SELECT SUM(tokens_awarded) as total FROM attendance`);
+    // Total tokens spent (sum of all redemptions)
+    const tokensSpent = await pool.query(`SELECT SUM(tokens_used) as total FROM redemptions`);
+    // All redemptions with student names
+    const allRedemptions = await pool.query(`
+      SELECT r.*, u.name as student_name 
+      FROM redemptions r 
+      JOIN users u ON r.user_id = u.id 
+      ORDER BY r.redeemed_at DESC
+    `);
+
+    return res.status(200).json({
+      total_awarded: parseInt(tokensAwarded.rows[0].total || 0),
+      total_spent: parseInt(tokensSpent.rows[0].total || 0),
+      circulating_supply: parseInt(tokensAwarded.rows[0].total || 0) - parseInt(tokensSpent.rows[0].total || 0),
+      redemptions: allRedemptions.rows
+    });
+  } catch (err) {
+    console.error('Treasury stats error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+// 🏆 PUBLIC/STUDENT: Get Leaderboard
+const getLeaderboard = async (req, res) => {
+  try {
+    const result = await pool.query(`
+      SELECT u.id, u.name, tw.balance, 
+      (SELECT COUNT(*) FROM attendance WHERE user_id = u.id) as total_attendance
+      FROM users u
+      JOIN token_wallet tw ON u.id = tw.user_id
+      WHERE u.role = 'student'
+      ORDER BY tw.balance DESC
+      LIMIT 10
+    `);
+    return res.status(200).json(result.rows);
+  } catch (err) {
+    console.error('Leaderboard error:', err.message);
+    return res.status(500).json({ error: 'Internal server error' });
+  }
+};
+
+module.exports = { 
+  getBalance, 
+  redeemTokens, 
+  getRedemptionHistory, 
+  getTreasuryStats, 
+  getLeaderboard 
+};

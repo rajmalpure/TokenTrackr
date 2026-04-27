@@ -36,14 +36,22 @@ const Navbar = () => {
 
           {/* Desktop Links */}
           <div className="hidden md:flex items-center gap-1">
-            {user?.role === 'student' && <Link to="/dashboard" className={linkClass('/dashboard')}>Dashboard</Link>}
-            {user?.role === 'admin'   && <Link to="/admin"     className={linkClass('/admin')}>Admin Panel</Link>}
-            <Link to="/wallet" className={linkClass('/wallet')}>Wallet</Link>
+            {user?.role === 'student' && (
+              <>
+                <Link to="/dashboard" className={linkClass('/dashboard')}>Dashboard</Link>
+                <Link to="/wallet" className={linkClass('/wallet')}>My Vault 💰</Link>
+              </>
+            )}
+            {user?.role === 'admin' && (
+              <>
+                <Link to="/admin" className={linkClass('/admin')}>Admin Panel</Link>
+                <Link to="/treasury" className={linkClass('/treasury')}>Treasury 🏛️</Link>
+              </>
+            )}
           </div>
 
           {/* Right side */}
           <div className="hidden md:flex items-center gap-3">
-            {/* ☀️ / 🌙 Toggle */}
             <button
               onClick={toggleTheme}
               title={isDark ? 'Switch to Light Mode' : 'Switch to Dark Mode'}
@@ -113,9 +121,18 @@ const Navbar = () => {
                 <p className="text-theme-muted text-xs">ID: #{user?.id} · <span className="capitalize">{user?.role}</span></p>
               </div>
             </div>
-            {user?.role === 'student' && <Link to="/dashboard" onClick={() => setMobileOpen(false)} className={`block ${linkClass('/dashboard')}`}>Dashboard</Link>}
-            {user?.role === 'admin'   && <Link to="/admin"     onClick={() => setMobileOpen(false)} className={`block ${linkClass('/admin')}`}>Admin Panel</Link>}
-            <Link to="/wallet" onClick={() => setMobileOpen(false)} className={`block ${linkClass('/wallet')}`}>Wallet</Link>
+            {user?.role === 'student' && (
+              <>
+                <Link to="/dashboard" onClick={() => setMobileOpen(false)} className={`block ${linkClass('/dashboard')}`}>Dashboard</Link>
+                <Link to="/wallet" onClick={() => setMobileOpen(false)} className={`block ${linkClass('/wallet')}`}>My Vault 💰</Link>
+              </>
+            )}
+            {user?.role === 'admin' && (
+              <>
+                <Link to="/admin" onClick={() => setMobileOpen(false)} className={`block ${linkClass('/admin')}`}>Admin Panel</Link>
+                <Link to="/treasury" onClick={() => setMobileOpen(false)} className={`block ${linkClass('/treasury')}`}>Treasury 🏛️</Link>
+              </>
+            )}
             <button onClick={handleLogout} className="w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-red-500/10 rounded-lg transition">Logout</button>
           </div>
         )}

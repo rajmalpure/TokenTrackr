@@ -21,7 +21,7 @@ const StatCard = ({ icon, label, value, sub, color }) => (
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [attendanceData, setAttendanceData] = useState({ total_count: 0, attendance: [] });
+  const [attendanceData, setAttendanceData] = useState({ total_count: 0, streak: 0, attendance: [] });
   const [balance, setBalance] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -48,7 +48,7 @@ const Dashboard = () => {
       <Navbar />
       <main className="max-w-6xl mx-auto px-4 py-8">
 
-        {/* Greeting + ID */}
+        {/* Greeting + Streak Badge */}
         <div className="mb-8 flex flex-col md:flex-row md:items-end justify-between gap-4">
           <div>
             <h1 className="text-3xl font-black text-theme-main">
@@ -56,9 +56,19 @@ const Dashboard = () => {
             </h1>
             <p className="text-theme-sub mt-1">Here's your attendance and token summary</p>
           </div>
-          <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-purple-600/20 border border-purple-500/30 rounded-2xl">
-            <span className="text-purple-400 text-xs font-bold uppercase tracking-wider">Your Student ID</span>
-            <span className="text-2xl font-black text-theme-main">#{user?.id}</span>
+          <div className="flex items-center gap-3">
+             {/* 🔥 Streak Badge */}
+             <div className="px-4 py-2 bg-orange-500/10 border border-orange-500/30 rounded-2xl flex items-center gap-2 group animate-float">
+                <span className="text-xl group-hover:scale-125 transition-transform">🔥</span>
+                <div>
+                  <p className="text-[10px] font-black uppercase text-orange-500 leading-none">Streak</p>
+                  <p className="text-lg font-black text-theme-main leading-none">{attendanceData.streak} Days</p>
+                </div>
+             </div>
+             <div className="inline-flex items-center gap-3 px-5 py-2.5 bg-purple-600/20 border border-purple-500/30 rounded-2xl">
+               <span className="text-purple-400 text-xs font-bold uppercase tracking-wider">ID</span>
+               <span className="text-2xl font-black text-theme-main">#{user?.id}</span>
+             </div>
           </div>
         </div>
 
@@ -81,7 +91,7 @@ const Dashboard = () => {
 
             <div className="flex gap-3 mb-8">
               <Link to="/wallet" className="px-6 py-3 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-500 hover:to-blue-500 text-white rounded-xl font-semibold transition-all shadow-lg shadow-purple-500/20 hover:scale-[1.02] flex items-center gap-2">
-                💳 Redeem Tokens
+                💳 Go to Vault
               </Link>
             </div>
 
