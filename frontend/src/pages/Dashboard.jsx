@@ -114,6 +114,7 @@ const Dashboard = () => {
                     <thead>
                       <tr className="bg-theme-card2">
                         <th className="px-6 py-3 text-left text-xs font-semibold text-theme-muted uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-semibold text-theme-muted uppercase tracking-wider">Teacher</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-theme-muted uppercase tracking-wider">Status</th>
                         <th className="px-6 py-3 text-left text-xs font-semibold text-theme-muted uppercase tracking-wider">Tokens</th>
                       </tr>
@@ -122,6 +123,9 @@ const Dashboard = () => {
                       {attendanceData.attendance.slice(0, 5).map((r) => (
                         <tr key={r.id} className="border-t border-theme hover:bg-theme-card2 transition-colors">
                           <td className="px-6 py-4 text-sm text-theme-main font-medium">{fmt(r.date)}</td>
+                          <td className="px-6 py-4 text-sm text-theme-sub">
+                            {r.teacher_name || 'System'}
+                          </td>
                           <td className="px-6 py-4">
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-semibold bg-green-500/20 text-green-400">
                               <span className="w-1.5 h-1.5 bg-green-400 rounded-full" />{r.status}

@@ -16,6 +16,7 @@ CREATE TABLE IF NOT EXISTS attendance (
   date DATE NOT NULL,
   status VARCHAR(20) DEFAULT 'present',
   tokens_awarded INT DEFAULT 10,
+  marked_by INT REFERENCES users(id),
   created_at TIMESTAMP DEFAULT NOW(),
   UNIQUE(user_id, date)
 );

@@ -1,7 +1,9 @@
 const pool = require('../config/db');
 
 const markAttendance = async (req, res) => {
-  console.log(`Attendance Mark Attempt - User ID: ${req.user.id}, Role: ${req.user.role}`);
+  const adminId = req.user.id; // The teacher marking it
+  console.log(`Attendance Mark Attempt - Admin ID: ${adminId}, Student ID: ${req.body.user_id}`);
+  
   const userRole = req.user.role?.toLowerCase().trim();
   if (userRole !== 'admin') {
     return res.status(403).json({ error: `Forbidden: admin access required.` });
@@ -16,10 +18,10 @@ const markAttendance = async (req, res) => {
   try {
     await client.query('BEGIN');
     const attendanceResult = await client.query(
-      `INSERT INTO attendance (user_id, date, status, tokens_awarded)
-       VALUES ($1, $2, 'present', 10)
-       RETURNING id, user_id, date, status, tokens_awarded, created_at`,
-      [user_id, date]
+      `INSERT INTO attendance (user_id, date, status, tokens_awarded, marked_by)
+       VALUES ($1, $2, 'present', 10, $3)
+       RETURNING id, user_id, date, status, tokens_awarded, marked_by, created_at`,
+      [user_id, date, adminId]
     );
     await client.query(
       `UPDATE token_wallet SET balance = balance + 10, updated_at = NOW() WHERE user_id = $1`,
@@ -48,8 +50,11 @@ const getAttendanceByUser = async (req, res) => {
 
   try {
     const result = await pool.query(
-      `SELECT id, user_id, date, status, tokens_awarded, created_at
-       FROM attendance WHERE user_id = $1 ORDER BY date DESC`,
+      `SELECT a.id, a.user_id, a.date, a.status, a.tokens_awarded, a.created_at, u.name as teacher_name
+       FROM attendance a
+       LEFT JOIN users u ON a.marked_by = u.id
+       WHERE a.user_id = $1 
+       ORDER BY a.date DESC`,
       [userId]
     );
 
@@ -58,10 +63,8 @@ const getAttendanceByUser = async (req, res) => {
     if (result.rows.length > 0) {
       const dates = result.rows.map(r => new Date(r.date).toISOString().split('T')[0]);
       let current = new Date();
-      // Check if they were present today or yesterday to continue streak
       let checkDate = current.toISOString().split('T')[0];
       
-      // If not present today, check if present yesterday
       if (!dates.includes(checkDate)) {
         current.setDate(current.getDate() - 1);
         checkDate = current.toISOString().split('T')[0];
